@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: digital-signature-service
+  labels:
+    app: digital-signature-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: digital-signature-service
+  template:
+    metadata:
+      labels:
+        app: digital-signature-service
+    spec:
+      containers:
+      - name: digital-signature-service
+        image: digital-signature-service:latest
+        ports:
+        - containerPort: 8080
+        envFrom:
+        - configMapRef:
+            name: digital-signature-config
+        - secretRef:
+            name: digital-signature-secrets
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        volumeMounts:
+        - name: certificates
+          mountPath: /app/certificates
+      volumes:
+      - name: certificates
+        persistentVolumeClaim:
+          claimName: certificates-pvc 
